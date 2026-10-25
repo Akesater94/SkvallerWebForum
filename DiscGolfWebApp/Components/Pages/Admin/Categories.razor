@@ -1,0 +1,105 @@
+@page "/Admin/Categories"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin")]
+@using Microsoft.AspNetCore.Authorization
+@using Skvaller.Models
+@using Skvaller.Services
+@inject ICategoryService CategoryService
+
+<div class="mb-4">
+    <label class="form-label">Ny rubrik</label>
+    <div class="input-group">
+        <input class="form-control" placeholder="exempelvis kändisskvaller" @bind="newCategoryName" />
+        <button class="btn btn-primary" @onclick="AddCategoryAsync">Lägg till</button>
+    </div>
+</div>
+
+@if (categories != null)
+{
+    @foreach (var category in categories)
+    {
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <strong>@category.Name</strong>
+                <button class="btn btn-sm btn-outline-danger"
+                @onclick="() => DeleteCategoryAsync(category)">
+                    Ta bort rubrik
+                </button>
+            </div>
+            <ul class="list-group list-group-flush">
+                @foreach (var topic in category.Topics)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        @topic.Name
+                        <button class="btn btn-sm btn-outline-danger"
+                        @onclick="() => DeleteTopicAsync(topic)">
+                            Ta bort
+                        </button>
+                    </li>
+                }
+                <li class="list-group-item">
+                    <div class="input-group">
+                        <input class="form-control" placeholder="Nytt ämne"
+                        @bind="newTopicNames[category.Id]" />
+                        <button class="btn btn-secondary"
+                        @onclick="() => AddTopicAsync(category)">
+                            Lägg till ämne
+                        </button>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    }
+
+}
+else
+{
+    <p>Laddar...</p>
+}
+
+@code {
+    private List<Category>? categories;
+    private string newCategoryName = "";
+    private Dictionary<int, string> newTopicNames = new();
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        categories = await CategoryService.GetAllWithTopicsAsync();
+
+        foreach (var category in categories)
+            newTopicNames.TryAdd(category.Id, "");
+    }
+
+    private async Task AddCategoryAsync()
+    {
+        await CategoryService.AddCategoryAsync(newCategoryName);
+        newCategoryName = "";
+        await LoadAsync();
+    }
+
+    private async Task DeleteCategoryAsync(Category category)
+    {
+        await CategoryService.DeleteCategoryAsync(category.Id);
+        await LoadAsync();
+    }
+
+    private async Task AddTopicAsync(Category category)
+    {
+        await CategoryService.AddTopicAsync(category.Id, newTopicNames[category.Id]);
+        newTopicNames[category.Id] = "";
+        await LoadAsync();
+    }
+
+    private async Task DeleteTopicAsync(Topic topic)
+    {
+        await CategoryService.DeleteTopic(topic.Id);
+        await LoadAsync();
+    }
+
+}

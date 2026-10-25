@@ -1,0 +1,87 @@
+@page "/admin/anmalningar"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin")]
+@using Microsoft.AspNetCore.Authorization
+@using System.Security.Claims
+@using Skvaller.Models
+@using Skvaller.Services
+@inject IReportService ReportService
+@inject IPostService PostService
+@inject AuthenticationStateProvider AuthProvider
+
+<PageTitle>Anmälningar</PageTitle>
+
+<h3>Anmälda inlägg</h3>
+
+@if (reports is null)
+{
+    <p>Laddar...</p>
+}
+else if (reports.Count == 0)
+{
+    <p>Inga olösta anmälningar.</p>
+}
+else
+{
+    @foreach (var report in reports)
+    {
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5>
+                    <a href="/posts/@report.PostId">@report.Post?.Title</a>
+                </h5>
+                <small class="text-muted">
+                    Skrivet av @report.Post?.Author?.Name
+                </small>
+                <p class="mt-2 mb-1"><strong>Orsak:</strong> @report.Reason</p>
+                <small class="text-muted">
+                    Anmäld av @report.Reporter?.Name, @report.CreatedAt.ToString("yyyy-MM-dd HH:mm")
+                </small>
+                <div class="mt-3">
+                    <button class="btn btn-sm btn-success me-2"
+                            @onclick="() => MarkAsHandledAsync(report)">
+                        Markera som hanterad
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger"
+                            @onclick="() => DeletePostAsync(report)">
+                        Ta bort inlägget
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+}
+@code {
+    private List<Report>? reports;
+    private string? userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthProvider.GetAuthenticationStateAsync();
+        userId = state.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        reports = await ReportService.GetUnhandledReportsAsync();
+    }
+
+    private async Task MarkAsHandledAsync(Report report)
+    {
+        await ReportService.MarkAsHandledAsync(report.Id);
+        await LoadAsync();
+    }
+
+    private async Task DeletePostAsync(Report report)
+    {
+        if (userId == null)
+        {
+            return;
+        }
+
+        await PostService.DeletePostAsync(report.PostId, userId, true);
+        await LoadAsync();
+    }
+}

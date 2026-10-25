@@ -1,0 +1,44 @@
+@page "/"
+@using Skvaller.Models
+@using Skvaller.Services
+@inject ICategoryService CategoryService
+
+<PageTitle>Skvaller</PageTitle>
+
+<h1>Skvallerforum</h1>
+
+@if (categories is null)
+{
+    <p>Laddar...</p>
+}
+
+else
+{
+    @foreach (var category in categories)
+    {
+        <div class="card mb-3">
+            <div class="card-header">
+                <strong>@category.Name</strong>
+            </div>
+            <ul class="list-group list-group-flush">
+                @foreach (var topic in category.Topics)
+                {
+                    <li class="list-group-item">
+                        <a href="/topics/@topic.Id">@topic.Name</a>
+                        <p>Antal inlägg: @topic.Posts.Count</p>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+}
+
+@code{
+    private List<Category>? categories;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        categories = await CategoryService.GetAllWithTopicsAsync();
+    }
+}

@@ -1,0 +1,11 @@
+<small class="text-muted">
+    @Name, @Date.ToString("yyyy-MM-dd HH:mm")
+</small>
+
+@code {
+    [Parameter]
+    public string? Name { get; set; }
+
+    [Parameter]
+    public DateTime Date { get; set; }
+}

@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../SkvallerAPI/SkvallerAPI.csproj" Id="e4c0c6cc-9706-48c4-94ca-5e4ddf71bc2e" />
+  <Project Path="SkavllerWebApp.csproj" />
+</Solution>

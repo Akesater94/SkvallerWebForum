@@ -1,0 +1,168 @@
+﻿:root {
+    --snackis-bg: #1b1d21;
+    --snackis-surface: #25282e;
+    --snackis-surface-header: #2f343c;
+    --snackis-input: #1f2227;
+    --snackis-border: #3a3f48;
+    --snackis-text: #d4d7dc;
+    --snackis-muted: #9aa0a6;
+    --snackis-link: #6aa9ff;
+    --snackis-link-hover: #9cc6ff;
+    --snackis-accent: #e8a33d;
+}
+
+/* Grund */
+html,
+body {
+    background-color: #1b1d21;
+    color: #d4d7dc;
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+    font-size: 0.95rem;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #ffffff;
+}
+
+a {
+    color: #6aa9ff;
+}
+
+    a:hover {
+        color: #9cc6ff;
+    }
+
+/* Text som ska vara dämpad (datum, författare) */
+.text-muted,
+.author-info {
+    color: #9aa0a6 !important;
+}
+
+.author-info {
+    font-size: 0.8rem;
+}
+
+/* Kort */
+.card {
+    background-color: #25282e;
+    border: 1px solid #3a3f48;
+    border-radius: 4px;
+    color: #d4d7dc;
+}
+
+.card-header {
+    background-color: #2f343c;
+    border-bottom: 1px solid #3a3f48;
+    color: #ffffff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.card-body {
+    color: #d4d7dc;
+}
+
+.list-group-item {
+    background-color: #25282e;
+    border-color: #3a3f48;
+    color: #d4d7dc;
+}
+
+/* Formulär */
+.form-control,
+.form-select {
+    background-color: #1f2227;
+    border: 1px solid #3a3f48;
+    color: #d4d7dc;
+}
+
+    .form-control::placeholder {
+        color: #8d939d;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        background-color: #1f2227;
+        border-color: #e8a33d;
+        box-shadow: none;
+        color: #d4d7dc;
+    }
+
+.form-floating > label {
+    color: #8d939d;
+}
+
+.form-check-label {
+    color: #d4d7dc;
+}
+
+/* Knappar */
+.btn-primary {
+    --bs-btn-color: #1b1d21;
+    --bs-btn-bg: #e8a33d;
+    --bs-btn-border-color: #e8a33d;
+    --bs-btn-hover-color: #1b1d21;
+    --bs-btn-hover-bg: #f0b658;
+    --bs-btn-hover-border-color: #f0b658;
+    --bs-btn-active-color: #1b1d21;
+    --bs-btn-active-bg: #d8942f;
+    --bs-btn-active-border-color: #d8942f;
+}
+
+.btn-outline-secondary {
+    --bs-btn-color: #d4d7dc;
+    --bs-btn-border-color: #3a3f48;
+    --bs-btn-hover-color: #1b1d21;
+    --bs-btn-hover-bg: #d4d7dc;
+    --bs-btn-hover-border-color: #d4d7dc;
+}
+
+/* Flikar (meddelandesidan) */
+.nav-tabs {
+    border-bottom-color: #3a3f48;
+}
+
+    .nav-tabs .nav-link {
+        color: #d4d7dc;
+    }
+
+        .nav-tabs .nav-link.active {
+            background-color: #25282e;
+            border-color: #3a3f48 #3a3f48 #25282e;
+            color: #e8a33d;
+        }
+
+/* Meny */
+.snackis-navbar {
+    background-color: #2f343c;
+    border-bottom: 2px solid #e8a33d;
+}
+
+    .snackis-navbar .navbar-brand {
+        color: #ffffff;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .snackis-navbar .nav-link {
+        color: #d4d7dc;
+        padding: 0.25rem 0;
+    }
+
+        .snackis-navbar .nav-link:hover,
+        .snackis-navbar .nav-link.active {
+            color: #e8a33d;
+        }
+
+/* Inloggningskort */
+.auth-card {
+    max-width: 420px;
+    margin-top: 2rem;
+}
+
+#blazor-error-ui {
+    display: none;
+}

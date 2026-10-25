@@ -1,0 +1,84 @@
+@page "/hantera-konto"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Skvaller.Data
+@using Skvaller.Services
+@inject IProfileService ProfileService
+@inject AuthenticationStateProvider AuthProvider
+
+<PageTitle>Hantera konto</PageTitle>
+
+<h3>Hantera konto</h3>
+
+@if (user is null)
+{
+    <p>Laddar...</p>
+}
+else
+{
+    <p><strong>@user.Name</strong></p>
+
+    @if (!string.IsNullOrEmpty(user.ImgPath))
+    {
+        <img src="/profileImages/@user.ImgPath" alt="Profilbild"
+             class="img-thumbnail mb-3" style="max-width: 200px;" />
+    }
+    else
+    {
+        <p>Du har ingen profilbild ännu.</p>
+    }
+
+    <div class="mb-3">
+        <label class="form-label">Ladda upp en ny profilbild</label>
+        <InputFile class="form-control" accept=".jpg,.jpeg,.png,.gif" OnChange="HandleImageUpload" />
+    </div>
+
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <div class="alert @(isError ? "alert-warning" : "alert-success")">@message</div>
+    }
+}
+
+@code {
+    private ApplicationUser? user;
+    private string? userId;
+    private string? message;
+    private bool isError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthProvider.GetAuthenticationStateAsync();
+        userId = state.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (userId != null)
+        {
+            user = await ProfileService.GetUserAsync(userId);
+        }
+    }
+
+    private async Task HandleImageUpload(InputFileChangeEventArgs e)
+    {
+        if (userId == null)
+        {
+            return;
+        }
+
+        using var stream = e.File.OpenReadStream(maxAllowedSize: 4 * 1024 * 1024);
+        var error = await ProfileService.SaveProfileImageAsync(userId, stream, e.File.Name, e.File.Size);
+
+        if (error is null)
+        {
+            message = "Din profilbild är uppdaterad!";
+            isError = false;
+            user = await ProfileService.GetUserAsync(userId);
+        }
+        else
+        {
+            message = error;
+            isError = true;
+        }
+    }
+}

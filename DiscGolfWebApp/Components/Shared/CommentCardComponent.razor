@@ -1,0 +1,29 @@
+@using Skvaller.Models
+
+<div class="card mb-2">
+    <div class="card-body d-flex justify-content-between align-items-start">
+        <div>
+            <AuthorInfo Name="@Comment.Author?.Name" Date="@Comment.CreatedAt" />
+            <p class="mb-0">@Comment.Content</p>
+        </div>
+        @if (CanDelete)
+        {
+            <button class="btn btn-sm btn-outline-danger" @onclick="() => OnDelete.InvokeAsync(Comment)">
+                Ta bort
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    @code {
+        [Parameter, EditorRequired]
+        public Comment Comment { get; set; } = default!;
+
+        [Parameter]
+        public bool CanDelete { get; set; }
+
+        [Parameter]
+        public EventCallback<Comment> OnDelete { get; set; }
+    }
+}

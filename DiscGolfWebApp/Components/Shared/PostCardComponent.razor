@@ -1,0 +1,21 @@
+@using Skvaller.Models
+
+<div class="card my-3">
+    <div class="card-body d-flex">
+        @if (!string.IsNullOrEmpty(Post.Author?.ImgPath))
+        {
+            <img src="/profileImages/@Post.Author.ImgPath" alt="@Post.Author.Name"
+                 class="rounded me-3" style="width: 100px; height: 100px; object-fit: cover;" />
+        }
+        <div>
+            <h3>@Post.Title</h3>
+            <AuthorInfo Name="@Post.Author?.Name" Date="@Post.CreatedAt.ToLocalTime()" />
+            <p class="mt-3">@Post.Content</p>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public Post Post { get; set; } = default!;
+}

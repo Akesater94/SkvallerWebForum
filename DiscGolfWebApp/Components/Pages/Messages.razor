@@ -1,0 +1,197 @@
+@page "/meddelanden"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Skvaller.Data
+@using Skvaller.Models
+@using Skvaller.Services
+@inject IMessageService MessageService
+@inject AuthenticationStateProvider AuthProvider
+
+<PageTitle>Meddelanden</PageTitle>
+
+<h3>Meddelanden</h3>
+
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+        <button class="nav-link @(view == "inbox" ? "active" : "")" @onclick='() => ChangeView("inbox")'>Inkorg</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link @(view == "sent" ? "active" : "")" @onclick='() => ChangeView("sent")'>Skickade meddelanden</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link @(view == "new" ? "active" : "")" @onclick='() => ChangeView("new")'>Skriv ett nytt meddelande</button>
+    </li>
+</ul>
+
+@if (!string.IsNullOrEmpty(feedback))
+{
+    <div class="alert alert-info">@feedback</div>
+}
+
+@if (selectedMessage is not null)
+{
+    <div class="card">
+        <div class="card-body">
+            <p class="mb-1"><strong>Från:</strong> @selectedMessage.Sender?.Name</p>
+            <p class="mb-1"><strong>Till:</strong> @selectedMessage.Receiver?.Name</p>
+            <p class="text-muted">@selectedMessage.SentAt.ToString("yyyy-MM-dd HH:mm")</p>
+            <p>@selectedMessage.Content</p>
+
+            <button class="btn btn-sm btn-secondary" @onclick="CloseMessage">Tillbaka</button>
+            @if (selectedMessage.ReceiverId == userId)
+            {
+                <button class="btn btn-sm btn-primary" @onclick="() => Reply(selectedMessage)">Svara</button>
+            }
+        </div>
+    </div>
+}
+
+else if (view == "inbox")
+{
+    @if (inbox.Count == 0)
+    {
+        <p>Din inkorg är tom.</p>
+    }
+    @foreach (var message in inbox)
+    {
+        <div class="card mb-2" style="cursor: pointer;" @onclick="() => OpenMessageAsync(message.Id)">
+            <div class="card-body @(message.IsRead ? "" : "fw-bold")">
+                Från @message.Sender?.Name
+                <small class="text-muted ms-2">@message.SentAt.ToString("yyyy-MM-dd HH:mm")</small>
+                @if (!message.IsRead)
+                {
+                    <span class="badge bg-primary ms-2">Nytt</span>
+                }
+            </div>
+        </div>
+    }
+}
+
+else if (view == "sent")
+{
+    @if (sent.Count == 0)
+    {
+        <p>Du har inte skickat några meddelanden.</p>
+    }
+    @foreach (var message in sent)
+    {
+        <div class="card mb-2" style="cursor: pointer;" @onclick="() => OpenMessageAsync(message.Id)">
+            <div class="card-body">
+                Till @message.Receiver?.Name
+                <small class="text-muted ms-2">@message.SentAt.ToString("yyyy-MM-dd HH:mm")</small>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="card card-body">
+        <label class="form-label">Mottagare</label>
+        <select class="form-select mb-2" @bind="receiverId">
+            <option value="">Välj mottagare...</option>
+            @foreach (var recipient in recipients)
+            {
+                <option value="@recipient.Id">@recipient.Name</option>
+            }
+        </select>
+
+        <label class="form-label">Meddelande</label>
+        <textarea class="form-control mb-2" rows="4" @bind="newContent"></textarea>
+
+        <div>
+            <button class="btn btn-primary" @onclick="SendAsync">Skicka</button>
+        </div>
+    </div>
+}
+
+@code {
+    private string view = "inbox";
+    private string? userId;
+    private List<PrivateMessage> inbox = new();
+    private List<PrivateMessage> sent = new();
+    private List<ApplicationUser> recipients = new();
+    private PrivateMessage? selectedMessage;
+    private string receiverId = "";
+    private string newContent = "";
+    private string? feedback;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthProvider.GetAuthenticationStateAsync();
+        userId = state.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (userId is null) return;
+
+        recipients = await MessageService.GetPossibleRecipientsAsync(userId);
+        await LoadAsync();
+    }
+
+
+    private async Task LoadAsync()
+    {
+        if (userId == null)
+        {
+            return;
+        }
+
+        inbox = await MessageService.GetInboxAsync(userId);
+        sent = await MessageService.GetSentAsync(userId);
+    }
+
+    private void ChangeView(string newView)
+    {
+        view = newView;
+        selectedMessage = null;
+        feedback = null;
+    }
+
+    private async Task OpenMessageAsync(int messageId)
+    {
+        if (userId == null)
+        {
+            return;
+        }
+
+        selectedMessage = await MessageService.GetMessageAsync(messageId, userId);
+        await LoadAsync();
+    }
+
+    private void CloseMessage()
+    {
+        selectedMessage = null;
+    }
+
+    private void Reply(PrivateMessage message)
+    {
+        receiverId = message.SenderId;
+        newContent = "";
+        feedback = null;
+        selectedMessage = null;
+        view = "new";
+    }
+
+    private async Task SendAsync()
+    {
+        if (userId == null)
+        {
+            return;
+        }
+
+        var sucessfulSent = await MessageService.SendMessageAsync(userId, receiverId, newContent);
+
+        if (sucessfulSent)
+        {
+            feedback = "Meddelandet skickades.";
+            receiverId = "";
+            newContent = "";
+            await LoadAsync();
+        }
+        else
+        {
+            feedback = "Meddelandet kunde inte skickas.";
+        }
+    }
+}

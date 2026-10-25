@@ -1,0 +1,151 @@
+@page "/posts/{PostId:int}"
+@rendermode InteractiveServer
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using Skvaller.Models
+@using Skvaller.Services
+@inject IReportService ReportService
+@inject IPostService PostService
+@inject ICommentService CommentService
+@inject AuthenticationStateProvider AuthProvider
+
+@if (post == null)
+{
+    <p>Laddar...</p>
+}
+else
+{
+    <a href="/topics/@post.TopicId"> Tillbaka till ämnet</a>
+
+    <PostCardComponent Post="post" />
+
+    @if (userId is not null && post.AuthorId != userId)
+    {
+        @if (!showReportForm)
+        {
+            <button class="btn btn-sm btn-outline-secondary mb-3" @onclick="() => showReportForm = true">
+                Anmäl inlägg
+            </button>
+        }
+        else
+        {
+            <div class="card card-body mb-3">
+                <label class="form-label">Varför anmäler du inlägget?</label>
+                <textarea class="form-control mb-2" rows="2" @bind="reportReason"></textarea>
+                <div>
+                    <button class="btn btn-sm btn-danger" @onclick="ReportPostAsync">Skicka anmälan</button>
+                    <button class="btn btn-sm btn-link" @onclick="CancelReport">Avbryt</button>
+                </div>
+            </div>
+        }
+    }
+
+    @if (!string.IsNullOrEmpty(reportMessage))
+    {
+        <div class="alert alert-info">@reportMessage</div>
+    }
+
+    <h5>Kommentarer</h5>
+
+    @if (comments.Count == 0)
+    {
+        <p>Inga kommentarer ännu.</p>
+    }
+
+    @foreach (var comment in comments)
+    {
+        <CommentCardComponent Comment="comment" CanDelete="@(isAdmin || comment.AuthorId == userId)" OnDelete="DeleteCommentAsync" />
+    }
+
+    @if (userId is not null)
+    {
+        <div class="mt-3">
+            <textarea class="form-control mb-2" rows="3" placeholder="Skriv en kommentar..."
+                      @bind="newComment"></textarea>
+            <button class="btn btn-primary" @onclick="AddCommentAsync">Kommentera</button>
+        </div>
+    }
+    else
+    {
+        <p>Logga in för att kommentera.</p>
+    }
+}
+
+@code {
+    [Parameter] public int PostId { get; set; }
+
+
+    private bool showReportForm;
+    private string reportReason = "";
+    private string? reportMessage;
+    private Post? post;
+    private List<Comment> comments = new();
+    private string newComment = "";
+    private string? userId;
+    private bool isAdmin;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthProvider.GetAuthenticationStateAsync();
+        userId = state.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        isAdmin = state.User.IsInRole("Admin");
+
+        post = await PostService.GetPostAsync(PostId);
+        await LoadCommentsAsync();
+    }
+
+    private async Task LoadCommentsAsync()
+    {
+        comments = await CommentService.GetCommentsByPostAsync(PostId);
+    }
+
+    private async Task AddCommentAsync()
+    {
+        if (userId == null)
+        {
+            return;
+        }
+
+        await CommentService.AddCommentAsync(PostId, userId, newComment);
+        newComment = "";
+        await LoadCommentsAsync();
+    }
+
+    private async Task DeleteCommentAsync(Comment comment)
+    {
+        if (userId == null)
+        {
+            return;
+        }
+
+        await CommentService.DeleteCommentAsync(comment.Id, userId, isAdmin);
+        await LoadCommentsAsync();
+    }
+
+    private async Task ReportPostAsync()
+    {
+        if (userId == null)
+        {
+            return;
+        }
+
+        var saved = await ReportService.ReportPostAsync(PostId, userId, reportReason);
+
+        if (saved)
+        {
+            reportMessage = "Tack, din anmälan har skickats till admin.";
+            reportReason = "";
+            showReportForm = false;
+        }
+        else
+        {
+            reportMessage = "Anmälan kunde inte skickas.";
+        }
+    }
+
+    private void CancelReport()
+    {
+        reportReason = "";
+        showReportForm = false;
+    }
+}
